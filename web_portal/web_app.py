@@ -43,11 +43,16 @@ def rows_to_csv_bytes(rows: List[dict]) -> bytes:
 
 
 async def run_scrape(team_urls: List[str]) -> Dict[str, List[dict]]:
-    sem = asyncio.Semaphore(scraper.MAX_WORKERS)
+    worker_count = max(1, int(os.environ.get("SCRAPER_MAX_WORKERS", str(scraper.MAX_WORKERS))))
+    match_limit = max(1, int(os.environ.get("SCRAPER_MAX_MATCHES", str(scraper.MAX_MATCHES))))
+    sem = asyncio.Semaphore(worker_count)
     output: Dict[str, List[dict]] = {}
 
     async with scraper.async_playwright() as p:
-        browser = await p.chromium.launch(headless=scraper.HEADLESS)
+        browser = await p.chromium.launch(
+            headless=scraper.HEADLESS,
+            args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        )
         context = await browser.new_context()
 
         for team_url in team_urls:
@@ -58,7 +63,7 @@ async def run_scrape(team_urls: List[str]) -> Dict[str, List[dict]]:
             match_urls = await scraper.collect_recent_match_urls(
                 listing_page,
                 team_url,
-                scraper.MAX_MATCHES,
+                match_limit,
             )
             await listing_page.close()
 
@@ -112,7 +117,15 @@ def index():
     if not team_urls:
         return render_template("index.html", error="Please paste at least one valid team results URL.")
 
-    scraped = asyncio.run(run_scrape(team_urls))
+    try:
+        scraped = asyncio.run(run_scrape(team_urls))
+    except Exception:
+        app.logger.exception("Scrape failed during download request")
+        return render_template(
+            "index.html",
+            error="Failed to collect data right now. Please try again in a minute.",
+        )
+
     non_empty = {team: rows for team, rows in scraped.items() if rows}
 
     if not non_empty:

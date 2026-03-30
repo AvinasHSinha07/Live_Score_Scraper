@@ -37,10 +37,18 @@ This repo now includes `render.yaml`, so Render can auto-detect build/start sett
 5. Click **Apply** to deploy.
 
 Render configuration used:
-- Build command: `pip install -r requirements.txt && python -m playwright install chromium`
-- Start command: `gunicorn web_portal.web_app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 180`
+- Build command: `pip install -r requirements.txt && python -m playwright install --with-deps chromium`
+- Start command: `gunicorn web_portal.web_app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 300`
 - Python version: `3.11.11`
 
 Notes:
 - The app automatically binds to Render's `PORT` environment variable.
 - First deploy can take a bit longer because Playwright downloads Chromium.
+- Runtime tuning is set via env vars in `render.yaml`:
+   - `SCRAPER_MAX_WORKERS=3`
+   - `SCRAPER_MAX_MATCHES=8`
+
+If you still get a 500 on download:
+1. Open Render service logs.
+2. Look for `Scrape failed during download request` and the stack trace below it.
+3. Reduce `SCRAPER_MAX_WORKERS` to `2` and redeploy.
