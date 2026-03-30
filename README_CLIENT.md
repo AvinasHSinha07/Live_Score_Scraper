@@ -37,7 +37,7 @@ This repo now includes `render.yaml`, so Render can auto-detect build/start sett
 5. Click **Apply** to deploy.
 
 Render configuration used:
-- Build command: `pip install -r requirements.txt && python -m playwright install --with-deps chromium`
+- Build command: `pip install -r requirements.txt && python -m playwright install chromium`
 - Start command: `gunicorn web_portal.web_app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 300`
 - Python version: `3.11.11`
 
