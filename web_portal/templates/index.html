@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team Stats Downloader</title>
+  <style>
+    :root {
+      --bg: #f5f8ff;
+      --bg-accent: #e6f7ef;
+      --surface: #ffffff;
+      --text: #132039;
+      --muted: #5b6780;
+      --line: #d8dfed;
+      --brand: #0e7a57;
+      --brand-hover: #0b6548;
+      --error: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(1100px 500px at 100% 0%, var(--bg-accent) 0%, transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+
+    .shell {
+      width: min(840px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(17, 41, 82, 0.12);
+      overflow: hidden;
+    }
+
+    .head {
+      padding: 22px 24px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(120deg, #ffffff 0%, #f4fff9 100%);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      letter-spacing: 0.2px;
+    }
+
+    .sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .body {
+      padding: 20px 24px 24px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 190px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      resize: vertical;
+      font-family: Consolas, "Courier New", monospace;
+      background: #fcfdff;
+      color: var(--text);
+    }
+
+    textarea:focus {
+      outline: 2px solid #b8d8ff;
+      border-color: #9ec6fb;
+    }
+
+    .btn {
+      margin-top: 16px;
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 12px 14px;
+      cursor: pointer;
+    }
+
+    .btn:hover { background: var(--brand-hover); }
+
+    .error {
+      margin-top: 14px;
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    .tips {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px dashed var(--line);
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="head">
+      <h1>LiveScore Team Stats Downloader</h1>
+      <p class="sub">Paste team results URLs and download stats. One URL downloads one CSV. Multiple URLs download one ZIP containing separate CSV files.</p>
+    </section>
+
+    <section class="body">
+      <form method="post">
+        <label for="team_urls">Team Results URLs (one per line)</label>
+        <textarea id="team_urls" name="team_urls" placeholder="https://www.livescore.com/en/football/team/real-madrid/4009/results/
+https://www.livescore.com/en/football/team/liverpool/3340/results/" required></textarea>
+
+        <button class="btn" type="submit">Extract and Download</button>
+
+        {% if error %}
+          <div class="error">{{ error }}</div>
+        {% endif %}
+      </form>
+
+      <div class="tips">
+        Uses default scraper behavior from main.py:
+        headless mode, max matches, and worker count are all automatic.
+      </div>
+    </section>
+  </main>
+</body>
+</html>
