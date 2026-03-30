@@ -12,6 +12,10 @@ services:
       - key: PLAYWRIGHT_BROWSERS_PATH
         value: /opt/render/project/src/.playwright-browsers
       - key: SCRAPER_MAX_WORKERS
-        value: 3
+        value: 2
       - key: SCRAPER_MAX_MATCHES
-        value: 8
+        value: 4
+      - key: SCRAPER_REQUEST_TIMEOUT_SECONDS
+        value: 150
+      - key: SCRAPER_CACHE_TTL_SECONDS
+        value: 900

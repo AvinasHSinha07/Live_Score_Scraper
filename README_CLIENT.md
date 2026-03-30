@@ -47,8 +47,15 @@ Notes:
 - Browser binaries are installed on startup into `PLAYWRIGHT_BROWSERS_PATH` so they are always present at runtime.
 - Runtime tuning is set via env vars in `render.yaml`:
    - `PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright-browsers`
-   - `SCRAPER_MAX_WORKERS=3`
-   - `SCRAPER_MAX_MATCHES=8`
+   - `SCRAPER_MAX_WORKERS=2`
+   - `SCRAPER_MAX_MATCHES=4`
+   - `SCRAPER_REQUEST_TIMEOUT_SECONDS=150`
+   - `SCRAPER_CACHE_TTL_SECONDS=900`
+
+Performance notes:
+- Lower `SCRAPER_MAX_MATCHES` gives faster download responses.
+- `SCRAPER_CACHE_TTL_SECONDS` speeds up repeated requests for the same URL.
+- If requests are still too slow, set `SCRAPER_MAX_MATCHES=3`.
 
 If you still get a 500 on download:
 1. Open Render service logs.

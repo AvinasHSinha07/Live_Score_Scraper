@@ -4,9 +4,10 @@ import io
 import os
 import re
 import sys
+import time
 import zipfile
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from flask import Flask, Response, render_template, request
 
@@ -18,6 +19,8 @@ if str(PROJECT_ROOT) not in sys.path:
 import main as scraper
 
 app = Flask(__name__, template_folder="templates")
+
+SCRAPE_CACHE: Dict[str, Tuple[float, List[dict]]] = {}
 
 
 def parse_urls(raw_text: str) -> List[str]:
@@ -45,6 +48,8 @@ def rows_to_csv_bytes(rows: List[dict]) -> bytes:
 async def run_scrape(team_urls: List[str]) -> Dict[str, List[dict]]:
     worker_count = max(1, int(os.environ.get("SCRAPER_MAX_WORKERS", str(scraper.MAX_WORKERS))))
     match_limit = max(1, int(os.environ.get("SCRAPER_MAX_MATCHES", str(scraper.MAX_MATCHES))))
+    cache_ttl_seconds = max(0, int(os.environ.get("SCRAPER_CACHE_TTL_SECONDS", "900")))
+    now = time.time()
     sem = asyncio.Semaphore(worker_count)
     output: Dict[str, List[dict]] = {}
 
@@ -58,6 +63,12 @@ async def run_scrape(team_urls: List[str]) -> Dict[str, List[dict]]:
         for team_url in team_urls:
             team_name = scraper.get_team_name_from_url(team_url)
             team_id = scraper.get_team_id_from_url(team_url)
+
+            if cache_ttl_seconds > 0 and team_url in SCRAPE_CACHE:
+                cached_at, cached_rows = SCRAPE_CACHE[team_url]
+                if now - cached_at <= cache_ttl_seconds:
+                    output[team_name] = cached_rows
+                    continue
 
             listing_page = await context.new_page()
             match_urls = await scraper.collect_recent_match_urls(
@@ -89,7 +100,10 @@ async def run_scrape(team_urls: List[str]) -> Dict[str, List[dict]]:
                         await page.close()
 
             results = await asyncio.gather(*[scrape_worker(url) for url in match_urls])
-            output[team_name] = [r for r in results if r]
+            team_rows = [r for r in results if r]
+            output[team_name] = team_rows
+            if cache_ttl_seconds > 0:
+                SCRAPE_CACHE[team_url] = (time.time(), team_rows)
 
         await browser.close()
 
@@ -117,8 +131,18 @@ def index():
     if not team_urls:
         return render_template("index.html", error="Please paste at least one valid team results URL.")
 
+    request_timeout_seconds = max(30, int(os.environ.get("SCRAPER_REQUEST_TIMEOUT_SECONDS", "180")))
+
     try:
-        scraped = asyncio.run(run_scrape(team_urls))
+        scraped = asyncio.run(asyncio.wait_for(run_scrape(team_urls), timeout=request_timeout_seconds))
+    except TimeoutError:
+        app.logger.exception("Scrape timed out during download request")
+        return render_template(
+            "index.html",
+            error=(
+                "Data collection timed out. Please try fewer URLs or try again in a minute."
+            ),
+        )
     except Exception as exc:
         app.logger.exception("Scrape failed during download request")
         error_text = str(exc).strip() or exc.__class__.__name__
