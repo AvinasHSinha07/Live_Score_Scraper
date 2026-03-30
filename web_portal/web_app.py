@@ -119,11 +119,15 @@ def index():
 
     try:
         scraped = asyncio.run(run_scrape(team_urls))
-    except Exception:
+    except Exception as exc:
         app.logger.exception("Scrape failed during download request")
+        error_text = str(exc).strip() or exc.__class__.__name__
         return render_template(
             "index.html",
-            error="Failed to collect data right now. Please try again in a minute.",
+            error=(
+                "Failed to collect data right now. "
+                f"Details: {error_text[:300]}"
+            ),
         )
 
     non_empty = {team: rows for team, rows in scraped.items() if rows}

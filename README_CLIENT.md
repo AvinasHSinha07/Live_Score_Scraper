@@ -37,14 +37,16 @@ This repo now includes `render.yaml`, so Render can auto-detect build/start sett
 5. Click **Apply** to deploy.
 
 Render configuration used:
-- Build command: `pip install -r requirements.txt && python -m playwright install chromium`
-- Start command: `gunicorn web_portal.web_app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 300`
+- Build command: `pip install -r requirements.txt`
+- Start command: `PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright-browsers python -m playwright install chromium && gunicorn web_portal.web_app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 300`
 - Python version: `3.11.11`
 
 Notes:
 - The app automatically binds to Render's `PORT` environment variable.
 - First deploy can take a bit longer because Playwright downloads Chromium.
+- Browser binaries are installed on startup into `PLAYWRIGHT_BROWSERS_PATH` so they are always present at runtime.
 - Runtime tuning is set via env vars in `render.yaml`:
+   - `PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright-browsers`
    - `SCRAPER_MAX_WORKERS=3`
    - `SCRAPER_MAX_MATCHES=8`
 
